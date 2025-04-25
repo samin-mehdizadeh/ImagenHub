@@ -231,3 +231,37 @@ def load_subject_driven_ie_dataset(with_name_att: bool = False, name_att: str = 
     data['eval'] = load_dataset(
         'ImagenHub/Subject_Driven_Image_Editing')['eval']
     return data, name_att if with_name_att else data
+
+
+def text_to_csv(input_txt_path, output_csv_path):
+    current_category = None
+    uid = 0
+
+    with open(input_txt_path, 'r', encoding='utf-8') as infile, \
+         open(output_csv_path, 'w', newline='', encoding='utf-8') as outfile:
+        
+        writer = csv.DictWriter(outfile, fieldnames=["uid", "prompt", "category"])
+        writer.writeheader()
+
+        for line in infile:
+            line = line.strip()
+            if not line:
+                continue
+            if line.startswith("# "):
+                current_category = line[2:].strip()
+            else:
+                writer.writerow({
+                    "uid": uid,
+                    "prompt": line,
+                    "category": current_category
+                })
+                uid += 1
+
+
+def load_custom_text_guided_ig_dataset(with_name_att: bool = False, name_att: str = "ImagenHub_Custom_Text_Guided_IG",text_file = "/data/samin/imagen-test/prompts.txt"):
+    csv_file = text_file.replace(".txt",".csv")
+    text_to_csv(text_file, csv_file)
+    # Step 3: Load dataset using Hugging Face `load_dataset`
+    data = load_dataset("csv", data_files={"test": csv_file})
+    data['test'] = load_dataset("csv", data_files={"test": csv_file})['test']
+    return data, name_att if with_name_att else data
